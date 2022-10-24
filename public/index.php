@@ -3,7 +3,7 @@ use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Slim\Factory\AppFactory;
 use ReallySimpleJWT\Token;
-
+//Testich
 require __DIR__ . "/../vendor/autoload.php";
 require "model/db_functions.php";
 require "model/config.php";
