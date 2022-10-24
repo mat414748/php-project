@@ -1,11 +1,7 @@
 <?php
 use ReallySimpleJWT\Token;
-
+require_once "../public/index.php";
 if (!isset($_COOKIE["token"]) || !Token::validateExpiration($_COOKIE["token"])) {
-    $error = array("message" => "Unauthorised");
-    echo json_encode($error);
-
-    http_response_code(401);
-    die();
+    message("Unauthorised",401);
 }
 ?>

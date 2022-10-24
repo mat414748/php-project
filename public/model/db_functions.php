@@ -1,81 +1,143 @@
 <?php
-$database = new mysqli("localhost", "root", "", "testich");
+$database = new mysqli("localhost", "root", "", "online_shop");
+require_once "../public/index.php";
 
-function add_invited($name,$age) {
+function create_product($sku, $active, $id_category, $name, $image, $description, $price, $stock) {
     global $database;
-    $name = strip_tags($name);
-    $name = addslashes($name);
-    $age = intval($age);
-    $result = $database->query("INSERT INTO invite_list VALUES ('','$name','$age')");
+   //  $name = strip_tags($name);
+   //  $name = addslashes($name);
+   //  $age = intval($age);
+   //  $age = addslashes($age); 
+    $result = $database->query("INSERT INTO product VALUES ('','$sku','$active','$id_category','$name','$image','$description','$price','$stock')");
       if (!$result){
-        http_response_code(500);
-        $message = array("message" => "Error adding the invited", "error" => $database->error);
-        echo json_encode($message);
+         message("Error creating a new product",500);
       } else {
-        http_response_code(201);
-        $message = array("message" => "The invited has been successfully created");
-        echo json_encode($message);
+         message("Successfully created product",201);
       }
 }
-function delete_invited($id) {
-    global $database;
-    $id = addslashes($id);
-    $id = intval($id);
-    $result = $database->query("DELETE FROM invite_list WHERE id = $id");//id = 1 or 1=1; --;
+
+function delete_product($id) {
+   global $database;
+   $result = $database->query("DELETE FROM product WHERE product_id = $id");
+   if (!$result){
+      message("No product found for the ID: " . $registration_id,500);  
+   } else if ($result === true && $database->affected_rows == 0){
+      message("Non-existing ID: " . $id,400);  
+   } else {
+      message("The product was successfully removed",200);  
+   }
+}
+
+function get_all_products() {
+   global $database; 
+   $result = $database->query("SELECT * FROM product");
+   if (!$result){
+      message("Error when requesting a list of products",500); 
+   } else if ($result === true || $result->num_rows == 0){
+      message("No products found",404);  
+   } else {
+      $products_list = array();
+		while ($product = $result->fetch_assoc()) {
+			$products_list[] = $product;
+		}
+      message($products_list, 200);
+		return $products_list;  
+   }
+}
+
+function get_product($id) {
+   global $database;
+   $result = $database->query("SELECT * FROM product WHERE product_id = $id");
+   if (!$result){
+      message("Error when requesting a product",500); 
+   } else if ($result === true || $result->num_rows == 0){
+      message("No product found",404);  
+   } else {
+      $product = $result->fetch_assoc();
+      return $product;  
+   }
+}
+
+function update_product($id, $sku, $active, $id_category, $name, $image, $description, $price, $stock) {
+   global $database;
+   $result = $database->query("UPDATE product SET sku = '$sku', active = '$active', id_category = '$id_category', name = '$name', image = '$image', description = '$description', price = '$price', stock = '$stock' WHERE product_id = $id");
+   if (!$result){
+      message("Update error", 500);  
+   } else if ($result === true && $database->affected_rows == 0){
+      message("The product is not found or an identical product already exists", 400);  
+   } else {
+      message("The product has been successfully updated", 200); 
+   }
+}
+
+//category
+function create_category($active, $name) {
+   global $database;
+  //  $name = strip_tags($name);
+  //  $name = addslashes($name);
+  //  $age = intval($age);
+  //  $age = addslashes($age); 
+   $result = $database->query("INSERT INTO category VALUES ('','$active','$name')");
      if (!$result){
-        http_response_code(500);
-        $message = array("message" => "Error when deleted the invited");
-        echo json_encode($message);
-     } else if ($result === true && $database->affected_rows == 0){
-        http_response_code(400);
-        $message = array("message" => "Not real ID " . $id);
-        echo json_encode($message);
+        message("Error creating a new product",500);
      } else {
-        http_response_code(200);
-        $message = array("message" => "The invited has been successfully deleted");
-        echo json_encode($message);
+        message("Successfully created product",201);
      }
 }
-function get_all_invited($id) {
-    global $database;
-    $id = intval($id);
-    $result = $database->query("SELECT * FROM invite_list WHERE id = $id");
-     if (!$result){
-        http_response_code(500);
-        $message = array("message" => "Error to get the invited");
-        echo json_encode($message);
-     } else if ($result === true || $result->num_rows == 0){
-        http_response_code(404);
-        $message = array("message" => "No invited found for ID: " . $id);
-        echo json_encode($message);
-     } else {
-        http_response_code(200);
-        $message = array("message" => "The invited has been successfully found");
-        echo json_encode($message);
-        $student = $result->fetch_assoc();
-        return $student;
+
+function delete_category($id) {
+   global $database;
+   $result = $database->query("DELETE FROM category WHERE id = $id");
+  if (!$result){
+     message("The product has not been removed",500);  
+  } else if ($result === true && $database->affected_rows == 0){
+     message("Not real ID: " . $id,400);  
+  } else {
+     message("The product was successfully removed",200);  
+  }
+}
+
+function get_all_category() {
+   global $database;
+   $result = $database->query("SELECT * FROM category");
+  if (!$result){
+     message("Error when requesting a list of products",500); 
+  } else if ($result === true || $result->num_rows == 0){
+     message("No products found",404);  
+  } else {
+     message("The list of products found",200);
+     $products_list = array();
+     while ($products_list = $result->fetch_assoc()) {
+        $products_list[] = $registration;
      }
+     return $products_list;  
+  }
 }
-function update_invited($id,$name,$age) {
-    global $database;
-    $name = strip_tags($name);
-    $name = addslashes($name);
-    $age = intval($age);
-    $result = $database->query("UPDATE invite_list SET name = '$name', age = '$age' WHERE id = $id");
-      if (!$result){
-        http_response_code(500);
-        $message = array("message" => "Update Error");
-        echo json_encode($message);
-      } else if ($result === true && $database->affected_rows == 0){
-        http_response_code(400);
-        $request_body = file_get_contents("php://input");
-        $request_data = json_decode($request_body, true);
-        $message = array("message" => "Not real ID: ". $id ." or an identical value" , "name" => $request_data["name"] , "age" => $request_data["age"], "error" => $database->error);
-        echo json_encode($message);
-     } else {
-        http_response_code(200);
-        $message = array("message" => "The invited has been successfully updated");
-        echo json_encode($message);
-      }
+
+function get_category($id) {
+  global $database;
+  $result = $database->query("SELECT * FROM category WHERE category_id = $id");
+  if (!$result){
+     message("Error when requesting a product",500); 
+  } else if ($result === true || $result->num_rows == 0){
+     message("No product found",404);  
+  } else {
+     message("The product was found successfully",200);
+     $product = $result->fetch_assoc();
+     return $product;  
+  }
 }
+
+function update_category($id, $active, $name) {
+  global $database;
+  $result = $database->query("UPDATE category SET active = '$active', name = '$name' WHERE category_id = $id");
+  if (!$result){
+     message("Update error", 500);  
+  } else if ($result === true && $database->affected_rows == 0){
+     message("The product is not found or an identical product already exists", 400);  
+  } else {
+     message("The product has been successfully updated", 200); 
+  }
+}
+
 ?>

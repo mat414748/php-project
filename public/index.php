@@ -5,8 +5,9 @@ use Slim\Factory\AppFactory;
 use ReallySimpleJWT\Token;
 
 require __DIR__ . "/../vendor/autoload.php";
-require "model/db_functions.php";
-require "model/config.php";
+require_once "model/db_functions.php";
+require "config/config.php";
+require "config/anti_sql_injection.php";
 
 /**
  * @OA\Info(title="My First API", version="0.1")
@@ -14,29 +15,18 @@ require "model/config.php";
 
 $app = AppFactory::create();
 
-/**
- * @OA\Get(
- *     path="/api/resource.json",
- *     @OA\Response(response="200", description="An example resource"),
- *     @OA\Response(response="404", description="Not found")
- * )
- */
+
 /**
  * Returns an error to the client with the given message and status code.
  * This will immediately return the response and end all scripts.
  * @param $message The error message string.
  * @param $code The response code to set for the response.
  */
-function error($message, $code) {
-    //Write the error as a JSON object.
-    $error = array("message" => $message);
-    echo json_encode($error);
-
-    //Set the response code.
+function message($message, $code) {
+    $message_result = array("message" => $message);
+    echo json_encode($message_result);
     http_response_code($code);
-
-    //End all scripts.
-    die();
+    die();    
 }
 
 /**
@@ -59,36 +49,49 @@ function error($message, $code) {
 *   @OA\Response(response="500", description="Erklärung der Antwort mit Status 200"))
 *   @OA\Response(response="404", description="Erklärung der Antwort mit Status 200"))
 */
-$app->get("/Student/{id}", function (Request $request, Response $response, $args) {
-    if (!isset($args["id"])) {
-        $message = array("message" => "False ID format", "error" => $database->error);
-        echo json_encode($message);
-        http_response_code(400);
-        die();
-    } 
-    //Chekc if authentificated
+$app->get("/Product/{id}", function (Request $request, Response $response, $args) {
     require "model/auth.php";
-    $invited = get_all_invited($args["id"]);
+    if (!isset($args["id"])) {
+        message("False ID format",400);
+    } 
+    message(get_product($args["id"]),200);
+    return $response;
+});
+
+$app->get("/Product", function (Request $request, Response $response, $args) {
+    require "model/auth.php";
+    get_all_products();   
     return $response;
 });
 
 //DELETE
-$app->delete("/Student/{id}", function (Request $request, Response $response, $args) {
-    $invited_id = $args["id"];
-    //Chekc if authentificated
+$app->delete("/Product/{id}", function (Request $request, Response $response, $args) {
     require "model/auth.php";
-    delete_invited($invited_id);
+    $invited_id = $args["id"];
+    delete_product($invited_id);
     return $response;
 });
 
 //Put something
-$app->put("/Student/{id}", function (Request $request, Response $response, $args) {
-    $invited_id = $args["id"];
+$app->put("/Product/{id}", function (Request $request, Response $response, $args) {
+    require "model/auth.php";
+    $product = get_product(anti_injection($args["id"]));
     $request_body = file_get_contents("php://input");
     $request_data = json_decode($request_body, true);
-    //Chekc if authentificated
-    require "model/auth.php";
-    update_invited($invited_id,$request_data["name"],$request_data["age"]);
+    if (isset($request_data["sku"])) {
+        
+    }
+
+    $sku = anti_injection($request_data["sku"]);
+    $active = anti_injection($request_data["active"]);
+    $id_category = anti_injection($request_data["id_category"]);
+    $name= anti_injection($request_data["name"]);
+    $image = anti_injection($request_data["image"]);
+    $description = anti_injection($request_data["description"]);
+    $price = anti_injection($request_data["price"]);
+    $stock = anti_injection($request_data["stock"]);
+
+    update_invited($args["id"],$request_data["name"],$request_data["age"]);
     return $response;
 });
 
@@ -112,53 +115,78 @@ $app->put("/Student/{id}", function (Request $request, Response $response, $args
 *   @OA\Response(response="200", description="Successfully added"))
 * )
 */
-$app->post("/Student", function (Request $request, Response $response, $args) {
-    $request_body = file_get_contents("php://input");
-    $request_data = json_decode($request_body, true);
-    if (!isset($request_data["name"]) || empty($request_data["name"])) {
-        $message = array("message" => "Please provide a name", "error" => $database->error);
-        echo json_encode($message);
-        http_response_code(400);
-        die();
-    } 
-    if (!isset($request_data["age"]) || !is_numeric($request_data["age"])) {
-        $message = array("message" => "Please provide a number, not a letter", "error" => $database->error);
-        echo json_encode($message);
-        http_response_code(400);
-        die();
-    }
-    $name = $request_data["name"];
-    $age = $request_data["age"];
-
-    //Name validation
-    if (strlen($name) > 250) {
-        $message = array("message" => "Name is to long", "error" => $database->error);
-        echo json_encode($message);
-        http_response_code(400);
-        die();
-    }
-
-    //Age validation
-    if ($age < 0 || $age >200) {
-        $message = array("message" => "Age must be between 1 and 200 years", "error" => $database->error);
-        echo json_encode($message);
-        http_response_code(400);
-        die();
-    }
-    if (is_float($age)) {
-        $message = array("message" => "Age must be without dot");
-        echo json_encode($message);
-        http_response_code(400);
-        die();
-    }
+$app->post("/Product", function (Request $request, Response $response, $args) {
     //Chekc if authentificated
     require "model/auth.php";
-    add_invited($request_data["name"],$request_data["age"]);
+
+    $request_body = file_get_contents("php://input");
+    $request_data = json_decode($request_body, true);
+
+    //If the parameters are not set
+    if (!isset($request_data["sku"]) || empty($request_data["sku"])) {
+        message("Please provide a \"sku\" field.", 400);
+    } 
+    if (!isset($request_data["active"]) || !is_numeric($request_data["active"])) {
+        message("Please provide an integer number for the \"active\" field.", 400);
+    }
+    if (!isset($request_data["id_category"]) || !is_numeric($request_data["id_category"])) {
+        message("Please provide an integer number for the \"id_category\" field.", 400);
+    }
+    if (!isset($request_data["name"]) || empty($request_data["name"])) {
+        message("Please provide a \"name\" field.", 400);
+    }
+    if (!isset($request_data["image"]) || empty($request_data["image"])) {
+        message("Please provide a \"image\" field.", 400);
+    }
+    if (!isset($request_data["description"]) || empty($request_data["description"])) {
+        message("Please provide a \"description\" field.", 400);
+    }
+    if (!isset($request_data["price"]) || !is_numeric($request_data["price"])) {
+        message("Please provide an integer or decimal number for the \"price\" field.", 400);
+    }
+    if (!isset($request_data["stock"]) || !is_numeric($request_data["stock"])) {
+        message("Please provide an integer number for the \"stock\" field.", 400);
+    }
+
+    //Anti injection
+    $sku = anti_injection($request_data["sku"]);
+    $active = anti_injection($request_data["active"]);
+    $id_category = anti_injection($request_data["id_category"]);
+    $name= anti_injection($request_data["name"]);
+    $image = anti_injection($request_data["image"]);
+    $description = anti_injection($request_data["description"]);
+    $price = anti_injection($request_data["price"]);
+    $stock = anti_injection($request_data["stock"]);
+    create_product($sku, $active, $id_category, $name, $image, $description, $price, $stock );
+    return $response;
+});
+
+//Create category
+$app->post("/Category", function (Request $request, Response $response, $args) {
+    //Chekc if authentificated
+    require "model/auth.php";
+
+    $request_body = file_get_contents("php://input");
+    $request_data = json_decode($request_body, true);
+
+    //If the parameters are not set
+    if (!isset($request_data["active"]) || !is_numeric($request_data["active"])) { 
+        message("Please provide an integer number for the \"active\" field.", 400);
+    } 
+    if (!isset($request_data["name"]) || empty($request_data["name"])) {
+        message("Please provide a \"name\" field.", 400);
+    }
+
+    //Anti injection
+    $active = anti_injection($request_data["active"]);
+    $name = anti_injection($request_data["name"]);
+
+    create_category($active,$name);
     return $response;
 });
 
 //Create a token
-$app->post("/Authenticate", function (Request $request, Response $response, $args) {
+$app->post("/Authentication", function (Request $request, Response $response, $args) {
     global $api_username;
     global $api_password;
     $request_body = file_get_contents("php://input");
@@ -168,17 +196,14 @@ $app->post("/Authenticate", function (Request $request, Response $response, $arg
     $password = $request_data["password"];
 
     if ($username != $api_username || $password != $api_password) {
-        $message = array("message" => "Invalid credentials");
-        echo json_encode($message);
-        http_response_code(400);
-        die();
+        message("Invalid credentials",400);
     }
 
-    $token = Token::create($username,$password,time() + 60,"localhost");
+    $token = Token::create($username, $password, time() + 60, "localhost");
     setcookie("token",$token);
-    echo $token ." time:" . time() ." ". time() + 1;//$response->getBody()->write("True");
-
+    echo $token ." time:" . time() ." ". time() + 1;
     return $response;
 });
+
 $app->run();
 ?>
