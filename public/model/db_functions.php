@@ -19,6 +19,7 @@ function add_invited($name,$age) {
 }
 function delete_invited($id) {
     global $database;
+    $id = addslashes($id);
     $id = intval($id);
     $result = $database->query("DELETE FROM invite_list WHERE id = $id");//id = 1 or 1=1; --;
      if (!$result){
