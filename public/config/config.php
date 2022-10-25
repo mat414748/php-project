@@ -1,4 +1,4 @@
 <?php
-$api_username ="admin";
-$api_password ="sec!ReT423*&";
+$api_username = "admin";
+$api_password = "sec!ReT423*&";
 ?>

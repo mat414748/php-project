@@ -28,7 +28,34 @@ function message($message, $code) {
     http_response_code($code);
     die();    
 }
+function put_check($name, $object, $request_data) {
+    if (isset($request_data[$name]) && !empty(anti_injection($request_data[$name]))) {
+        $value = anti_injection($request_data[$name]);
+        $object[$name] = $value;
+        return $object;
+    } else {
+        message("The " . $name . " field must not be empty.",400);
+    }
+}
 
+//Create a token
+$app->post("/Authentication", function (Request $request, Response $response, $args) {
+    global $api_username;
+    global $api_password;
+    $request_body = file_get_contents("php://input");
+    $request_data = json_decode($request_body, true);
+
+    $username = $request_data["username"];
+    $password = $request_data["password"];
+
+    if ($username != $api_username || $password != $api_password) {
+        message("Invalid credentials", 400);
+    }
+
+    $token = Token::create($username, $password, time() + 60, "localhost");
+    setcookie("token", $token);
+    return $response;
+});
 /**
 * @OA\Get(
 *   path="/Student/{id}",
@@ -50,48 +77,50 @@ function message($message, $code) {
 *   @OA\Response(response="404", description="Erklärung der Antwort mit Status 200"))
 */
 $app->get("/Product/{id}", function (Request $request, Response $response, $args) {
-    require "model/auth.php";
-    if (!isset($args["id"])) {
-        message("False ID format",400);
+    require "controller/require_authentication.php";
+    if (!isset($args["id"]) || !is_numeric($args["id"])) {
+        message("False ID format", 400);
     } 
-    message(get_product($args["id"]),200);
+    message(get_product($args["id"]), 200);
     return $response;
 });
 
 $app->get("/Product", function (Request $request, Response $response, $args) {
-    require "model/auth.php";
+    require "controller/require_authentication.php";
     get_all_products();   
     return $response;
 });
 
 //DELETE
 $app->delete("/Product/{id}", function (Request $request, Response $response, $args) {
-    require "model/auth.php";
-    $invited_id = $args["id"];
-    delete_product($invited_id);
+    require "controller/require_authentication.php";
+    if (!isset($args["id"]) || !is_numeric($args["id"])) {
+        message("False ID format", 400);
+    }
+    delete_product($args["id"]);
     return $response;
 });
 
 //Put something
 $app->put("/Product/{id}", function (Request $request, Response $response, $args) {
-    require "model/auth.php";
+    require "controller/require_authentication.php";
+    if (!isset($args["id"]) || !is_numeric($args["id"])) {
+        message("False ID format", 400);
+    } 
     $product = get_product(anti_injection($args["id"]));
     $request_body = file_get_contents("php://input");
     $request_data = json_decode($request_body, true);
-    if (isset($request_data["sku"])) {
-        
-    }
 
-    $sku = anti_injection($request_data["sku"]);
-    $active = anti_injection($request_data["active"]);
-    $id_category = anti_injection($request_data["id_category"]);
-    $name= anti_injection($request_data["name"]);
-    $image = anti_injection($request_data["image"]);
-    $description = anti_injection($request_data["description"]);
-    $price = anti_injection($request_data["price"]);
-    $stock = anti_injection($request_data["stock"]);
+    $product = put_check("sku",$product,$request_data);
+    $product = put_check("active",$product,$request_data);
+    $product = put_check("id_category",$product,$request_data);
+    $product = put_check("name",$product,$request_data);
+    $product = put_check("image",$product,$request_data);
+    $product = put_check("description",$product,$request_data);
+    $product = put_check("price",$product,$request_data);
+    $product = put_check("stock",$product,$request_data);
 
-    update_invited($args["id"],$request_data["name"],$request_data["age"]);
+    update_product(anti_injection($args["id"]),$product["sku"],$product["active"],$product["id_category"],$product["name"],$product["image"],$product["description"],$product["price"],$product["stock"]);
     return $response;
 });
 
@@ -117,7 +146,7 @@ $app->put("/Product/{id}", function (Request $request, Response $response, $args
 */
 $app->post("/Product", function (Request $request, Response $response, $args) {
     //Chekc if authentificated
-    require "model/auth.php";
+    require "controller/require_authentication.php";
 
     $request_body = file_get_contents("php://input");
     $request_data = json_decode($request_body, true);
@@ -157,21 +186,25 @@ $app->post("/Product", function (Request $request, Response $response, $args) {
     $description = anti_injection($request_data["description"]);
     $price = anti_injection($request_data["price"]);
     $stock = anti_injection($request_data["stock"]);
-    create_product($sku, $active, $id_category, $name, $image, $description, $price, $stock );
+    try {
+        create_product($sku, $active, $id_category, $name, $image, $description, $price, $stock);
+    } catch (Exception $pizdec) {
+        message("The product with sku " . $sku . " is already exist: " . $pizdec->getMessage(), 500);
+    }
     return $response;
 });
 
 //Create category
 $app->post("/Category", function (Request $request, Response $response, $args) {
     //Chekc if authentificated
-    require "model/auth.php";
+    require "controller/require_authentication.php";
 
     $request_body = file_get_contents("php://input");
     $request_data = json_decode($request_body, true);
 
     //If the parameters are not set
-    if (!isset($request_data["active"]) || !is_numeric($request_data["active"])) { 
-        message("Please provide an integer number for the \"active\" field.", 400);
+    if (!isset($request_data["active"]) || !is_bool($request_data["active"])) { 
+        message("Please provide an true or false for the \"active\" field.", 400);
     } 
     if (!isset($request_data["name"]) || empty($request_data["name"])) {
         message("Please provide a \"name\" field.", 400);
@@ -180,28 +213,53 @@ $app->post("/Category", function (Request $request, Response $response, $args) {
     //Anti injection
     $active = anti_injection($request_data["active"]);
     $name = anti_injection($request_data["name"]);
-
-    create_category($active,$name);
+    try {
+        create_category($active,$name);
+    } catch (Exception $pizdec) {
+        message("The category " . $name . " is already exist: " . $pizdec->getMessage(), 500);
+    }
     return $response;
 });
 
-//Create a token
-$app->post("/Authentication", function (Request $request, Response $response, $args) {
-    global $api_username;
-    global $api_password;
+$app->get("/Category/{id}", function (Request $request, Response $response, $args) {
+    require "controller/require_authentication.php";
+    if (!isset($args["id"]) || !is_numeric($args["id"])) {
+        message("False ID format",400);
+    }
+    message(get_category($args["id"]),200);
+    return $response;
+});
+
+$app->get("/Category", function (Request $request, Response $response, $args) {
+    require "controller/require_authentication.php";
+    get_all_categories();   
+    return $response;
+});
+
+//DELETE
+$app->delete("/Category/{id}", function (Request $request, Response $response, $args) {
+    require "controller/require_authentication.php";
+    if (!isset($args["id"]) || !is_numeric($args["id"])) {
+        message("False ID format", 400);
+    } 
+    delete_category($args["id"]);
+    return $response;
+});
+
+//Put
+$app->put("/Category/{id}", function (Request $request, Response $response, $args) {
+    require "controller/require_authentication.php";
+    if (!isset($args["id"]) || !is_numeric($args["id"])) {
+        message("False ID format", 400);
+    } 
+    $category = get_category(anti_injection($args["id"]));
     $request_body = file_get_contents("php://input");
     $request_data = json_decode($request_body, true);
 
-    $username = $request_data["username"];
-    $password = $request_data["password"];
+    $category = put_check("active", $category, $request_data);
+    $category = put_check("name", $category, $request_data);
 
-    if ($username != $api_username || $password != $api_password) {
-        message("Invalid credentials",400);
-    }
-
-    $token = Token::create($username, $password, time() + 60, "localhost");
-    setcookie("token",$token);
-    echo $token ." time:" . time() ." ". time() + 1;
+    update_category(anti_injection($args["id"]), $category["active"], $category["name"]);
     return $response;
 });
 
