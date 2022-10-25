@@ -1,7 +1,17 @@
 <?php
 $database = new mysqli("localhost", "root", "", "online_shop");
 require_once "../public/index.php";
-
+/**
+ * A function for creating a new product and adding it to the database.
+ * @param sku Product Sku
+ * @param active Is the product active
+ * @param id_category What category does the product belong to
+ * @param name Product Name
+ * @param image Product Image
+ * @param description Product Description
+ * @param price Product Price
+ * @param stock Number of products in stock
+ */
 function create_product($sku, $active, $id_category, $name, $image, $description, $price, $stock) {
    global $database;
    $result = $database->query("INSERT INTO product VALUES ('','$sku','$active','$id_category','$name','$image','$description','$price','$stock')");
@@ -11,7 +21,10 @@ function create_product($sku, $active, $id_category, $name, $image, $description
       message("Successfully created product",201);
    }
 }
-
+/**
+ * Function for removing product from db
+ * @param id Product ID
+ */
 function delete_product($id) {
    global $database;
    $result = $database->query("DELETE FROM product WHERE product_id = $id");
@@ -23,7 +36,9 @@ function delete_product($id) {
       message("The product was successfully removed",200);  
    }
 }
-
+/**
+ * Function to search for all products
+ */
 function get_all_products() {
    global $database; 
    $result = $database->query("SELECT * FROM product");
@@ -40,7 +55,10 @@ function get_all_products() {
 		return $products_list;  
    }
 }
-
+/**
+ * Function to search for a specific product
+ * @param id Product ID
+ */
 function get_product($id) {
    global $database;
    $result = $database->query("SELECT * FROM product WHERE product_id = $id");
@@ -53,7 +71,18 @@ function get_product($id) {
       return $product;  
    }
 }
-
+/**
+ * Function for changing product data in a database row
+ * @param id Product ID to change it
+ * @param sku Product Sku
+ * @param active Is the product active
+ * @param id_category What category does the product belong to
+ * @param name Product Name
+ * @param image Product Image
+ * @param description Product Description
+ * @param price Product Price
+ * @param stock Number of products in stock
+ */
 function update_product($id, $sku, $active, $id_category, $name, $image, $description, $price, $stock) {
    global $database;
    $result = $database->query("UPDATE product SET sku = '$sku', active = '$active', id_category = '$id_category', name = '$name', image = '$image', description = '$description', price = '$price', stock = '$stock' WHERE product_id = $id");
@@ -66,7 +95,12 @@ function update_product($id, $sku, $active, $id_category, $name, $image, $descri
    }
 }
 
-//category
+//Categories
+/**
+ * A function for creating a new category and adding it to the database.
+ * @param active Is the category active
+ * @param name Category name
+ */
 function create_category($active, $name) {
    global $database;
    $result = $database->query("INSERT INTO category VALUES ('','$active','$name')");
@@ -76,7 +110,10 @@ function create_category($active, $name) {
      message("Successfully created product",201);
    }
 }
-
+/**
+ * Function for removing category from db
+ * @param id Category ID
+ */
 function delete_category($id) {
    global $database;
    $result = $database->query("DELETE FROM category WHERE category_id = $id");
@@ -88,7 +125,9 @@ function delete_category($id) {
       message("The category was successfully removed",200);  
    } 
 }
-
+/**
+ * Function to search for all categories
+ */
 function get_all_categories() {
    global $database;
    $result = $database->query("SELECT * FROM category");
@@ -105,7 +144,10 @@ function get_all_categories() {
 		return $categories_list;  
    }
 }
-
+/**
+ * Function to search for a specific category
+ * @param id Category ID
+ */
 function get_category($id) {
    global $database;
    $result = $database->query("SELECT * FROM category WHERE category_id = $id");
@@ -118,7 +160,12 @@ function get_category($id) {
       return $category;  
    }
 }
-
+/**
+ * Function for changing category data in a database row
+ * @param id Category ID
+ * @param active Is the category active
+ * @param name Category name
+ */
 function update_category($id, $active, $name) {
    global $database;
    $result = $database->query("UPDATE category SET active = '$active', name = '$name' WHERE category_id = $id");

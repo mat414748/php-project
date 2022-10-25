@@ -28,6 +28,12 @@ function message($message, $code) {
     http_response_code($code);
     die();    
 }
+/**
+ * Checks the entered parameter value for suitability to change it in the database table.
+ * @param name Parameter name
+ * @param object Which object is being changed
+ * @param request_data Received values
+ */
 function put_check($name, $object, $request_data) {
     if (isset($request_data[$name]) && !empty(anti_injection($request_data[$name]))) {
         $value = anti_injection($request_data[$name]);
