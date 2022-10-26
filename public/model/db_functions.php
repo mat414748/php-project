@@ -29,9 +29,9 @@ function delete_product($id) {
    global $database;
    $result = $database->query("DELETE FROM product WHERE product_id = $id");
    if (!$result){
-      message("No product found for the ID: " . $registration_id,500);  
+      message("Request error", 500);  
    } else if ($result === true && $database->affected_rows == 0){
-      message("Non-existing ID: " . $id,400);  
+      message("An object with this ID does not exist. ID: " . $id, 404);  
    } else {
       message("The product was successfully removed",200);  
    }
@@ -52,12 +52,12 @@ function get_all_products() {
 			$products_list[] = $product;
 		}
       message($products_list, 200);
-		return $products_list;  
    }
 }
 /**
  * Function to search for a specific product
  * @param id Product ID
+ * @return product Returns the found product as an object
  */
 function get_product($id) {
    global $database;
@@ -107,7 +107,7 @@ function create_category($active, $name) {
    if (!$result){
      message("Error creating a new product",500);
    } else {
-     message("Successfully created product",201);
+     message("Successfully created category",201);
    }
 }
 /**
@@ -118,9 +118,9 @@ function delete_category($id) {
    global $database;
    $result = $database->query("DELETE FROM category WHERE category_id = $id");
    if (!$result){
-      message("The category has not been removed",500);  
+      message("Request error", 500);  
    } else if ($result === true && $database->affected_rows == 0){
-      message("Non-existing ID: " . $id, 400);  
+      message("An object with this ID does not exist. ID: " . $id, 404);  
    } else {
       message("The category was successfully removed",200);  
    } 
@@ -141,12 +141,12 @@ function get_all_categories() {
 			$categories_list[] = $category;
 		}
       message($categories_list, 200);
-		return $categories_list;  
    }
 }
 /**
  * Function to search for a specific category
  * @param id Category ID
+ * @return category Returns the found category as an object
  */
 function get_category($id) {
    global $database;

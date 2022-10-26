@@ -7,11 +7,11 @@ require __DIR__ . "/../vendor/autoload.php";
 require_once "model/db_functions.php";
 require "config/config.php";
 require "config/anti_sql_injection.php";
+header("Content-Type: application/json");
 /**
- * @OA\Info(title="My First API", version="0.1")
+ * @OA\Info(title="Online shop API", version="1")
  */
 $app = AppFactory::create();
-
 
 /**
  * Returns an error to the client with the given message and status code.
@@ -32,16 +32,38 @@ function message($message, $code) {
  * @param request_data Received values
  */
 function put_check($name, $object, $request_data) {
-    if (isset($request_data[$name]) && !empty(anti_injection($request_data[$name]))) {
+    if (isset($request_data[$name]) && isset($object[$name]) && !empty(anti_injection($request_data[$name]))) {
         $value = anti_injection($request_data[$name]);
         $object[$name] = $value;
         return $object;
-    } else {
+    } else if (isset($request_data[$name]) && empty(anti_injection($request_data[$name]))) {
         message("The " . $name . " field must not be empty.",400);
+    } else {
+        return $object;
     }
 }
-
-//Create a token
+/**
+ * @OA\Post(
+ *     path="/Authentication",
+ *     summary="Used to authenticate and obtain an access token that will be stored in the cookies.",
+ *     tags={"General"},
+ *     requestBody=@OA\RequestBody(
+ *         request="/Authentication",
+ *         required=true,
+ *         description="The credentials are passed to the server via the request body.",
+ *         @OA\MediaType(
+ *             mediaType="application/json",
+ *             @OA\Schema(
+ *                 @OA\Property(property="username", type="string", example="admin"),
+ *                 @OA\Property(property="password", type="string", example="sec!ReT423*&")
+ *             )
+ *         )
+ *     ),
+ *     @OA\Response(response="200", description="Successfully authenticated")),
+ *     @OA\Response(response="401", description="Invalid credentials")),
+ *     @OA\Response(response="500", description="Internal server error"))
+ * )
+ */
 $app->post("/Authentication", function (Request $request, Response $response, $args) {
     global $api_username;
     global $api_password;
@@ -52,34 +74,31 @@ $app->post("/Authentication", function (Request $request, Response $response, $a
     $password = anti_injection($request_data["password"]);
     
     if ($username != $api_username || $password != $api_password) {
-        message("Invalid credentials", 400);
+        message("Invalid credentials", 401);
     }
 
-    $token = Token::create($username, $password, time() + 60, "localhost");
+    $token = Token::create($username, $password, time() + 3600, "localhost");
     setcookie("token", $token);
-    message("Token created",200);
+    message("Token created", 200);
     return $response;
 });
 /**
-* @OA\Get(
-*   path="/Student/{id}",
-*   summary="Beschreibung hier einfügen (Was macht der Endpoint?)",
-*   tags={"Getall"},
-*   @OA\Parameter(
-*       name="parameter",
-*       in="path",
-*       required=true,
-*       description="Beschreibung des Parameters",
-*       @OA\Schema(
-*           type="int",
-*           example= 1
-*       )
-*   ),
-*   @OA\Response(response="200", description="Erklärung"))
-*   @OA\Response(response="401", description="Erklärung"))
-*   @OA\Response(response="500", description="Erklärung der Antwort mit Status 200"))
-*   @OA\Response(response="404", description="Erklärung der Antwort mit Status 200"))
-*/
+ * @OA\Get(
+ *   path="/Product/{id}",
+ *   summary="Returns the product with the corresponding id",
+ *   tags={"Search_one"},
+ *   @OA\Parameter(
+ *       name="id",
+ *       in="path",
+ *       required=true,
+ *       description="ID of the wanted product",
+ *       @OA\Schema(
+ *           type="integer",
+ *           example=1
+ *       )
+ *   ),
+ *   @OA\Response(response="200", description="Output of the desired product"))
+ */
 $app->get("/Product/{id}", function (Request $request, Response $response, $args) {
     require "controller/require_authentication.php";
     $id = anti_injection($args["id"], true);
@@ -89,14 +108,35 @@ $app->get("/Product/{id}", function (Request $request, Response $response, $args
     message(get_product($id), 200);
     return $response;
 });
-
+/**
+ * @OA\Get(
+ *   path="/Product",
+ *   summary="Shows all products",
+ *   tags={"Search_many"},
+ *   @OA\Response(response="200", description="All products are shown"))
+ */
 $app->get("/Product", function (Request $request, Response $response, $args) {
     require "controller/require_authentication.php";
     get_all_products();   
     return $response;
 });
-
-//DELETE
+/**
+ * @OA\Delete(
+ *   path="/Product/{id}",
+ *   summary="Deletes the product with the corresponding id",
+ *   tags={"Delete"},
+ *   @OA\Parameter(
+ *       name="id",
+ *       in="path",
+ *       required=true,
+ *       description="ID of the wanted product",
+ *       @OA\Schema(
+ *           type="integer",
+ *           example=1
+ *       )
+ *   ),
+ *   @OA\Response(response="200", description="The product was successfully removed"))
+ */
 $app->delete("/Product/{id}", function (Request $request, Response $response, $args) {
     require "controller/require_authentication.php";
     $id = anti_injection($args["id"], true);
@@ -106,8 +146,42 @@ $app->delete("/Product/{id}", function (Request $request, Response $response, $a
     delete_product($id);
     return $response;
 });
-
-//Put something
+/**
+ * @OA\Put(
+ *   path="/Product/{id}",
+ *   summary="Returns the product with the corresponding id",
+ *   tags={"Update"},
+ *   @OA\Parameter(
+ *       name="id",
+ *       in="path",
+ *       required=true,
+ *       description="ID of the wanted product",
+ *       @OA\Schema(
+ *           type="integer",
+ *           example=1
+ *       )
+ *   ),
+ *   requestBody=@OA\RequestBody(
+ *       request="/Product/{id}",
+ *       required=true,
+ *       description="The credentials are passed to the server via the request body.",
+ *       @OA\MediaType(
+ *           mediaType="application/json",
+ *           @OA\Schema(
+ *               @OA\Property(property="sku", type="string", example="bebrik"),
+ *               @OA\Property(property="active", type="boolean", example="true"),
+ *               @OA\Property(property="id_category", type="integer", example=10),
+ *               @OA\Property(property="name", type="string", example="Chocolate"),
+ *               @OA\Property(property="image", type="string", example="Chocolate image"),
+ *               @OA\Property(property="description", type="string", example="Dark chocolate"),
+ *               @OA\Property(property="price", type="decimal", example=12.5),
+ *               @OA\Property(property="stock", type="integer", example=10)
+ *           )
+ *       )
+ *   ),
+ *   @OA\Response(response="200", description="The product has changed"))
+ * )
+ */
 $app->put("/Product/{id}", function (Request $request, Response $response, $args) {
     require "controller/require_authentication.php";
     $id = anti_injection($args["id"], true);
@@ -117,7 +191,6 @@ $app->put("/Product/{id}", function (Request $request, Response $response, $args
     $product = get_product($id);
     $request_body = file_get_contents("php://input");
     $request_data = json_decode($request_body, true);
-
     $product = put_check("sku",$product,$request_data);
     $product = put_check("active",$product,$request_data);
     $product = put_check("id_category",$product,$request_data);
@@ -130,27 +203,32 @@ $app->put("/Product/{id}", function (Request $request, Response $response, $args
     update_product($id,$product["sku"],$product["active"],$product["id_category"],$product["name"],$product["image"],$product["description"],$product["price"],$product["stock"]);
     return $response;
 });
-
 /**
-* @OA\Post(
-*   path="/Student",
-*   summary="Beschreibung hier einfügen (Was macht der Endpoint?)",
-*   tags={"Create"},
-*   requestBody=@OA\RequestBody(
-*       request="/Student",
-*       required=true,
-*       description="Beschreiben was im Request Body enthalten sein muss",
-*       @OA\MediaType(
-*           mediaType="application/json",
-*           @OA\Schema(
-*               @OA\Property(property="username", type="string", example="Admin"),
-*               @OA\Property(property="age", type="integer", example="13")
-*           )
-*       )
-*   ),
-*   @OA\Response(response="200", description="Successfully added"))
-* )
-*/
+ * @OA\Post(
+ *     path="/Product",
+ *     summary="Creates a new product.",
+ *     tags={"Create"},
+ *     requestBody=@OA\RequestBody(
+ *         request="/Product",
+ *         required=true,
+ *         description="The credentials are passed to the server via the request body.",
+ *         @OA\MediaType(
+ *             mediaType="application/json",
+ *             @OA\Schema(
+ *                 @OA\Property(property="sku", type="string", example="admin"),
+ *                 @OA\Property(property="active", type="boolean", example=true),
+ *                 @OA\Property(property="id_category", type="integer", example=10),
+ *                 @OA\Property(property="name", type="string", example="Chocolate"),
+ *                 @OA\Property(property="image", type="string", example="Chocolate image"),
+ *                 @OA\Property(property="description", type="string", example="Dark chocolate"),
+ *                 @OA\Property(property="price", type="decimal", example=12.5),
+ *                 @OA\Property(property="stock", type="integer", example=10)
+ *             )
+ *         )
+ *     ),
+ *     @OA\Response(response="200", description="Successfully created product"))  
+ * )
+ */
 $app->post("/Product", function (Request $request, Response $response, $args) {
     //Chekc if authentificated
     require "controller/require_authentication.php";
@@ -162,8 +240,8 @@ $app->post("/Product", function (Request $request, Response $response, $args) {
     if (!isset($request_data["sku"]) || empty($request_data["sku"])) {
         message("Please provide a \"sku\" field.", 400);
     } 
-    if (!isset($request_data["active"]) || !is_numeric($request_data["active"])) {
-        message("Please provide an integer number for the \"active\" field.", 400);
+    if (!isset($request_data["active"]) || !is_bool($request_data["active"])) { 
+        message("Please provide an true or false for the \"active\" field.", 400);
     }
     if (!isset($request_data["id_category"]) || !is_numeric($request_data["id_category"])) {
         message("Please provide an integer number for the \"id_category\" field.", 400);
@@ -201,7 +279,27 @@ $app->post("/Product", function (Request $request, Response $response, $args) {
     return $response;
 });
 
-//Create category
+//Category
+/**
+ * @OA\Post(
+ *     path="/Category",
+ *     summary="Creates a new category.",
+ *     tags={"Create"},
+ *     requestBody=@OA\RequestBody(
+ *         request="/Category",
+ *         required=true,
+ *         description="The credentials are passed to the server via the request body.",
+ *         @OA\MediaType(
+ *             mediaType="application/json",
+ *             @OA\Schema(
+ *                 @OA\Property(property="active", type="boolean", example=true),
+ *                 @OA\Property(property="name", type="string", example="Headphones"),
+ *             )
+ *         )
+ *     ),
+ *     @OA\Response(response="201", description="Successfully created category"))  
+ * )
+ */
 $app->post("/Category", function (Request $request, Response $response, $args) {
     //Chekc if authentificated
     require "controller/require_authentication.php";
@@ -227,7 +325,23 @@ $app->post("/Category", function (Request $request, Response $response, $args) {
     }
     return $response;
 });
-
+/**
+* @OA\Get(
+*   path="/Category/{id}",
+*   summary="Returns the category with the corresponding id",
+*   tags={"Search_one"},
+*   @OA\Parameter(
+*       name="id",
+*       in="path",
+*       required=true,
+*       description="ID of the wanted category",
+*       @OA\Schema(
+*           type="integer",
+*           example=1
+*       )
+*   ),
+*   @OA\Response(response="200", description="Output of the desired category")) 
+*/
 $app->get("/Category/{id}", function (Request $request, Response $response, $args) {
     require "controller/require_authentication.php";
     $id = anti_injection($args["id"], true);
@@ -237,14 +351,35 @@ $app->get("/Category/{id}", function (Request $request, Response $response, $arg
     message(get_category($id),200);
     return $response;
 });
-
+/**
+* @OA\Get(
+*   path="/Category",
+*   summary="Shows all categories",
+*   tags={"Search_many"},
+*   @OA\Response(response="200", description="All categories are shown"))
+*/
 $app->get("/Category", function (Request $request, Response $response, $args) {
     require "controller/require_authentication.php";
     get_all_categories();   
     return $response;
 });
-
-//DELETE
+/**
+* @OA\Delete(
+*   path="/Category/{id}",
+*   summary="Deletes the category with the corresponding id",
+*   tags={"Delete"},
+*   @OA\Parameter(
+*       name="id",
+*       in="path",
+*       required=true,
+*       description="ID of the wanted category",
+*       @OA\Schema(
+*           type="integer",
+*           example=1
+*       )
+*   ),
+*   @OA\Response(response="200", description="The category was successfully removed"))
+*/
 $app->delete("/Category/{id}", function (Request $request, Response $response, $args) {
     require "controller/require_authentication.php";
     $id = anti_injection($args["id"], true);
@@ -254,8 +389,36 @@ $app->delete("/Category/{id}", function (Request $request, Response $response, $
     delete_category($id);
     return $response;
 });
-
-//Put
+/**
+ *  @OA\Put(
+ *      path="/Category/{id}",
+ *      summary="Deletes the product with the corresponding id",
+ *      tags={"Delete"},
+ *      @OA\Parameter(
+ *          name="id",
+ *          in="path",
+ *          required=true,
+ *          description="ID of the wanted product",
+ *          @OA\Schema(
+ *              type="integer",
+ *              example=1
+ *          )
+ *      ),
+ *      requestBody=@OA\RequestBody(
+ *          request="/Category",
+ *          required=true,
+ *          description="The credentials are passed to the server via the request body.",
+ *          @OA\MediaType(
+ *              mediaType="application/json",
+ *              @OA\Schema(
+ *                  @OA\Property(property="active", type="boolean", example="true"),
+ *                  @OA\Property(property="name", type="string", example="Headphones"),
+ *              )
+ *          )
+ *      ),
+ *      @OA\Response(response="200", description="The product has changed"))
+ *  )
+ */
 $app->put("/Category/{id}", function (Request $request, Response $response, $args) {
     require "controller/require_authentication.php";
     $id = anti_injection($args["id"], true);
