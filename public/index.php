@@ -149,7 +149,7 @@ $app->delete("/Product/{id}", function (Request $request, Response $response, $a
 /**
  * @OA\Put(
  *   path="/Product/{id}",
- *   summary="Returns the product with the corresponding id",
+ *   summary="Product Update",
  *   tags={"Update"},
  *   @OA\Parameter(
  *       name="id",
@@ -191,6 +191,7 @@ $app->put("/Product/{id}", function (Request $request, Response $response, $args
     $product = get_product($id);
     $request_body = file_get_contents("php://input");
     $request_data = json_decode($request_body, true);
+
     $product = put_check("sku",$product,$request_data);
     $product = put_check("active",$product,$request_data);
     $product = put_check("id_category",$product,$request_data);
@@ -200,7 +201,11 @@ $app->put("/Product/{id}", function (Request $request, Response $response, $args
     $product = put_check("price",$product,$request_data);
     $product = put_check("stock",$product,$request_data);
 
-    update_product($id,$product["sku"],$product["active"],$product["id_category"],$product["name"],$product["image"],$product["description"],$product["price"],$product["stock"]);
+    try {
+        update_product($id,$product["sku"],$product["active"],$product["id_category"],$product["name"],$product["image"],$product["description"],$product["price"],$product["stock"]);
+    } catch (Exception $pizdec) {
+        message($pizdec->getMessage(), 500);
+    }
     return $response;
 });
 /**
@@ -314,8 +319,6 @@ $app->post("/Category", function (Request $request, Response $response, $args) {
     if (!isset($request_data["name"]) || empty($request_data["name"])) {
         message("Please provide a \"name\" field.", 400);
     }
-
-    //Anti injection
     $active = anti_injection($request_data["active"]);
     $name = anti_injection($request_data["name"]);
     try {
@@ -390,34 +393,34 @@ $app->delete("/Category/{id}", function (Request $request, Response $response, $
     return $response;
 });
 /**
- *  @OA\Put(
- *      path="/Category/{id}",
- *      summary="Deletes the product with the corresponding id",
- *      tags={"Delete"},
- *      @OA\Parameter(
- *          name="id",
- *          in="path",
- *          required=true,
- *          description="ID of the wanted product",
- *          @OA\Schema(
- *              type="integer",
- *              example=1
- *          )
- *      ),
- *      requestBody=@OA\RequestBody(
- *          request="/Category",
- *          required=true,
- *          description="The credentials are passed to the server via the request body.",
- *          @OA\MediaType(
- *              mediaType="application/json",
- *              @OA\Schema(
- *                  @OA\Property(property="active", type="boolean", example="true"),
- *                  @OA\Property(property="name", type="string", example="Headphones"),
- *              )
- *          )
- *      ),
- *      @OA\Response(response="200", description="The product has changed"))
- *  )
+ * @OA\Put(
+ *   path="/Category/{id}",
+ *   summary="Category Update",
+ *   tags={"Update"},
+ *   @OA\Parameter(
+ *       name="id",
+ *       in="path",
+ *       required=true,
+ *       description="ID of the wanted category",
+ *       @OA\Schema(
+ *           type="integer",
+ *           example=1
+ *       )
+ *   ),
+ *     requestBody=@OA\RequestBody(
+ *         request="/Category/{id}",
+ *         required=true,
+ *         description="The credentials are passed to the server via the request body.",
+ *         @OA\MediaType(
+ *             mediaType="application/json",
+ *             @OA\Schema(
+ *                 @OA\Property(property="active", type="boolean", example="true"),
+ *                 @OA\Property(property="name", type="string", example="Headphones"),
+ *             )
+ *         )
+ *     ),
+ *   @OA\Response(response="200", description="The product has changed"))
+ * )
  */
 $app->put("/Category/{id}", function (Request $request, Response $response, $args) {
     require "controller/require_authentication.php";
@@ -431,8 +434,12 @@ $app->put("/Category/{id}", function (Request $request, Response $response, $arg
 
     $category = put_check("active", $category, $request_data);
     $category = put_check("name", $category, $request_data);
-
-    update_category($id, $category["active"], $category["name"]);
+    
+    try {
+        update_category($id, $category["active"], $category["name"]);
+    } catch (Exception $pizdec) {
+        message($pizdec->getMessage(), 500);
+    }
     return $response;
 });
 
