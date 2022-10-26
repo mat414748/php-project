@@ -3,16 +3,13 @@ use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Slim\Factory\AppFactory;
 use ReallySimpleJWT\Token;
-
 require __DIR__ . "/../vendor/autoload.php";
 require_once "model/db_functions.php";
 require "config/config.php";
 require "config/anti_sql_injection.php";
-
 /**
  * @OA\Info(title="My First API", version="0.1")
  */
-
 $app = AppFactory::create();
 
 
@@ -85,7 +82,7 @@ $app->post("/Authentication", function (Request $request, Response $response, $a
 */
 $app->get("/Product/{id}", function (Request $request, Response $response, $args) {
     require "controller/require_authentication.php";
-    $id = anti_injection($args["id"],false);
+    $id = anti_injection($args["id"], true);
     if (!isset($id) || !is_numeric($id)) {
         message("False ID format", 400);
     } 
@@ -102,7 +99,7 @@ $app->get("/Product", function (Request $request, Response $response, $args) {
 //DELETE
 $app->delete("/Product/{id}", function (Request $request, Response $response, $args) {
     require "controller/require_authentication.php";
-    $id = anti_injection($args["id"],false);
+    $id = anti_injection($args["id"], true);
     if (!isset($id) || !is_numeric($id)) {
         message("False ID format", 400);
     }
@@ -113,7 +110,7 @@ $app->delete("/Product/{id}", function (Request $request, Response $response, $a
 //Put something
 $app->put("/Product/{id}", function (Request $request, Response $response, $args) {
     require "controller/require_authentication.php";
-    $id = anti_injection($args["id"],false);
+    $id = anti_injection($args["id"], true);
     if (!isset($id) || !is_numeric($id)) {
         message("False ID format", 400);
     } 
@@ -233,7 +230,7 @@ $app->post("/Category", function (Request $request, Response $response, $args) {
 
 $app->get("/Category/{id}", function (Request $request, Response $response, $args) {
     require "controller/require_authentication.php";
-    $id = anti_injection($args["id"],false);
+    $id = anti_injection($args["id"], true);
     if (!isset($id) || !is_numeric($id)) {
         message("False ID format",400);
     }
@@ -250,7 +247,7 @@ $app->get("/Category", function (Request $request, Response $response, $args) {
 //DELETE
 $app->delete("/Category/{id}", function (Request $request, Response $response, $args) {
     require "controller/require_authentication.php";
-    $id = anti_injection($args["id"],false);
+    $id = anti_injection($args["id"], true);
     if (!isset($id) || !is_numeric($id)) {
         message("False ID format", 400);
     } 
@@ -261,7 +258,7 @@ $app->delete("/Category/{id}", function (Request $request, Response $response, $
 //Put
 $app->put("/Category/{id}", function (Request $request, Response $response, $args) {
     require "controller/require_authentication.php";
-    $id = anti_injection($args["id"],false);
+    $id = anti_injection($args["id"], true);
     if (!isset($id) || !is_numeric($id)) {
         message("False ID format", 400);
     } 
