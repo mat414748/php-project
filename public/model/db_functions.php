@@ -89,7 +89,7 @@ function update_product($id, $sku, $active, $id_category, $name, $image, $descri
    if (!$result){
       message("Update error", 500);  
    } else if ($result === true && $database->affected_rows == 0){
-      message("The product is not found or an identical product already exists", 400);  
+      message("No changes have been made. Possible reasons:1.The product is not found 2.Identical product already exists", 400);  
    } else {
       message("The product has been successfully updated", 200); 
    }
