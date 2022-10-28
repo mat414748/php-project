@@ -36,7 +36,7 @@ function put_check($name, $object, $request_data) {
         $object[$name] = $value;
         return $object;
     } else if (isset($request_data[$name]) && empty(anti_injection($request_data[$name]))) {
-        message("The " . $name . " field must not be empty.",400);
+        message("The " . $name . " field must not be empty.", 400);
     } else {
         return $object;
     }
@@ -75,10 +75,10 @@ $app->post("/Authentication", function (Request $request, Response $response, $a
     if (!isset($request_data["password"]) || empty($request_data["password"])) {
         message("Please provide a \"password\" field.", 400);
     }
-    
+
     $username = anti_injection($request_data["username"]);
     $password = anti_injection($request_data["password"]);
-    
+    //Verification of login and password for token creation
     if ($username != $api_username || $password != $api_password) {
         message("Invalid credentials", 401);
     }
@@ -159,7 +159,7 @@ $app->post("/Product", function (Request $request, Response $response, $args) {
     $description = anti_injection($request_data["description"]);
     $price = anti_injection($request_data["price"]);
     $stock = anti_injection($request_data["stock"]);
-
+    //If an error occurs specifically at the database level, then an exception will be thrown.
     try {
         create_product($sku, $active, $id_category, $name, $image, $description, $price, $stock);
     } catch (Exception $pizdec) {
@@ -189,7 +189,7 @@ $app->post("/Product", function (Request $request, Response $response, $args) {
 $app->get("/Product/{id}", function (Request $request, Response $response, $args) {
     require "controller/require_authentication.php";
     $id = anti_injection($args["id"], true);
-
+    //If the parameters are not set
     if (!isset($id) || !is_numeric($id)) {
         message("False ID format", 400);
     }
@@ -231,7 +231,7 @@ $app->get("/Product", function (Request $request, Response $response, $args) {
 $app->delete("/Product/{id}", function (Request $request, Response $response, $args) {
     require "controller/require_authentication.php";
     $id = anti_injection($args["id"], true);
-
+    //If the parameters are not set
     if (!isset($id) || !is_numeric($id)) {
         message("False ID format", 400);
     }
@@ -278,7 +278,7 @@ $app->delete("/Product/{id}", function (Request $request, Response $response, $a
 $app->put("/Product/{id}", function (Request $request, Response $response, $args) {
     require "controller/require_authentication.php";
     $id = anti_injection($args["id"], true);
-
+    //If the parameters are not set
     if (!isset($id) || !is_numeric($id)) {
         message("False ID format", 400);
     }
@@ -287,17 +287,17 @@ $app->put("/Product/{id}", function (Request $request, Response $response, $args
     $request_body = file_get_contents("php://input");
     $request_data = json_decode($request_body, true);
 
-    $product = put_check("sku",$product,$request_data);
-    $product = put_check("active",$product,$request_data);
-    $product = put_check("id_category",$product,$request_data);
-    $product = put_check("name",$product,$request_data);
-    $product = put_check("image",$product,$request_data);
-    $product = put_check("description",$product,$request_data);
-    $product = put_check("price",$product,$request_data);
-    $product = put_check("stock",$product,$request_data);
-
+    $product = put_check("sku", $product, $request_data);
+    $product = put_check("active", $product, $request_data);
+    $product = put_check("id_category", $product, $request_data);
+    $product = put_check("name", $product, $request_data);
+    $product = put_check("image", $product, $request_data);
+    $product = put_check("description", $product, $request_data);
+    $product = put_check("price", $product, $request_data);
+    $product = put_check("stock", $product, $request_data);
+    //If an error occurs specifically at the database level, then an exception will be thrown.
     try {
-        update_product($id,$product["sku"],$product["active"],$product["id_category"],$product["name"],$product["image"],$product["description"],$product["price"],$product["stock"]);
+        update_product($id, $product["sku"], $product["active"], $product["id_category"], $product["name"], $product["image"], $product["description"], $product["price"], $product["stock"]);
     } catch (Exception $pizdec) {
         message($pizdec->getMessage(), 500);
     }
@@ -342,9 +342,9 @@ $app->post("/Category", function (Request $request, Response $response, $args) {
 
     $active = anti_injection($request_data["active"]);
     $name = anti_injection($request_data["name"]);
-    
+    //If an error occurs specifically at the database level, then an exception will be thrown. 
     try {
-        create_category($active,$name);
+        create_category($active, $name);
     } catch (Exception $pizdec) {
         message($pizdec->getMessage(), 500);
     }
@@ -371,12 +371,12 @@ $app->post("/Category", function (Request $request, Response $response, $args) {
 $app->get("/Category/{id}", function (Request $request, Response $response, $args) {
     require "controller/require_authentication.php";
     $id = anti_injection($args["id"], true);
-
+    //If the parameters are not set
     if (!isset($id) || !is_numeric($id)) {
-        message("False ID format",400);
+        message("False ID format", 400);
     }
 
-    message(get_category($id),200);
+    message(get_category($id), 200);
     return $response;
 });
 /**
@@ -413,7 +413,7 @@ $app->get("/Category", function (Request $request, Response $response, $args) {
 $app->delete("/Category/{id}", function (Request $request, Response $response, $args) {
     require "controller/require_authentication.php";
     $id = anti_injection($args["id"], true);
-
+    //If the parameters are not set
     if (!isset($id) || !is_numeric($id)) {
         message("False ID format", 400);
     }
@@ -448,13 +448,13 @@ $app->delete("/Category/{id}", function (Request $request, Response $response, $
  *              )
  *          )
  *      ),
- *      @OA\Response(response="200", description="The product has changed"))
+ *      @OA\Response(response="200", description="The category has changed"))
  *  )
  */
 $app->put("/Category/{id}", function (Request $request, Response $response, $args) {
     require "controller/require_authentication.php";
     $id = anti_injection($args["id"], true);
-
+    //If the parameters are not set
     if (!isset($id) || !is_numeric($id)) {
         message("False ID format", 400);
     }
@@ -465,7 +465,7 @@ $app->put("/Category/{id}", function (Request $request, Response $response, $arg
 
     $category = put_check("active", $category, $request_data);
     $category = put_check("name", $category, $request_data);
-    
+    //If an error occurs specifically at the database level, then an exception will be thrown.
     try {
         update_category($id, $category["active"], $category["name"]);
     } catch (Exception $pizdec) {
@@ -473,6 +473,6 @@ $app->put("/Category/{id}", function (Request $request, Response $response, $arg
     }
     return $response;
 });
-
+//Vendor Launch
 $app->run();
 ?>

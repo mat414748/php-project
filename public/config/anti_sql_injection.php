@@ -6,13 +6,18 @@
  * @return return_value Returns the corrected value
  */
 function anti_injection($value, $decimal = false) {
-    if (is_numeric($value) && $decimal) {   //If decimal number
+    //If decimal number
+    if (is_numeric($value) && $decimal) {   
         $return_value = strip_tags(addslashes(intval($value)));
         return $return_value;
-    } else if (is_numeric($value) && !$decimal) {   //If not decimal number
+    } 
+    //If not decimal number
+    else if (is_numeric($value) && !$decimal) {   
         $return_value = strip_tags(addslashes($value));
         return $return_value;
-    } else {    //Only string value remains
+    } 
+    //Only string value remains
+    else {    
         $return_value = strip_tags(addslashes(strval($value)));
         return $return_value;
     }
