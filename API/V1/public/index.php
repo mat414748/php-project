@@ -12,6 +12,7 @@ header("Content-Type: application/json");
  * @OA\Info(title="Online shop API", version="1")
  */
 $app = AppFactory::create();
+$app->setBasePath("/API/V1");
 /**
  * Returns an error to the client with the given message and status code.
  * This will immediately return the response and end all scripts.
