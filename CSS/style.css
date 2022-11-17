@@ -1,0 +1,10 @@
+.header-background {
+    background-color: blanchedalmond;
+}
+table {
+    border-collapse: collapse;
+    text-align: right;
+}
+td {
+    min-width: 100px;
+}

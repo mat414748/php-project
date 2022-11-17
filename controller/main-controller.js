@@ -12,7 +12,8 @@
 // }
 // someShit();
 
-/*function someShit(randomFunction) {
+/*
+function someShit(randomFunction) {
     randomFunction();
 }
 var myFunction = function() { };
@@ -35,6 +36,8 @@ while (counter < 100) {
     counter++;
 }
 */
+/*
 console.log("Ja")
 console.warn("Problem")
 console.error("Death")
+*/
