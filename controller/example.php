@@ -1,6 +1,12 @@
 <?php
     $request_body = file_get_contents("php://input");
     $request_data = json_decode($request_body, true);
+    $result = 0;
+    for ($i = 0; $i < count($request_data); $i++) {
+        $result += $request_data[$i]["number"];
+    }
+    echo json_encode(array("result" => $result));
+    /*
     if (!is_numeric($request_data[0]["number"]) || !is_numeric($request_data[1]["number"]) || !is_numeric($request_data[2]["number"]) || !is_numeric($request_data[3]["number"])) {
         $response_data = array(
             "output" => "ERROR"
@@ -14,4 +20,5 @@
     }
     $responce_body = json_encode($response_data);
     echo $responce_body;   
+    */
 ?>
